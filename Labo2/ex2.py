@@ -1,77 +1,88 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Aug  7 04:44:51 2019
-
-@author: edin
-"""
+# Homework 2 part 2
+# Authors : Taekbum Lee and Edin Mujkanovic
 
 
 import numpy as np
-import pandas as pd
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib import rc, cm
 from scipy import optimize
-import math
 
-
-def mapFeature(x1,x2,degreeMax):
-    out = np.empty((x1.shape[0],0))
-    for i in range(0, degreeMax + 1):
-        for j in range(i+1):
-            out = np.concatenate((out, np.reshape(np.power(x1,i-j) * np.power(x2,j), (-1, 1))), axis=1)
-
-    return out
-        
 #Functions
-def sigmoid (z):
+def mapFeature(x, y):
+    ans = []
+    for i in range(7):
+        for j in range(7 - i):
+            ans.append(1 * (x ** i) * (y ** j))
+    return ans
+
+
+def sigmoid(z):
     return 1.0 / (1.0 + np.exp(-z))
 
 
-def costFunction (theta, x, y, l=1):
+def costFunction(theta, x, y, l):
     m = len(x)
     h = sigmoid(np.inner(x, theta))
-    return ((-1/m) * (np.sum(y * np.log(h) + (1-y) * np.log(1-h)))) + ((l/2/m) * np.sum(np.square(thetas[1:])))
-    
-    
+    return ((-1/m) * (np.sum(y * np.log(h) + (1-y) * np.log(1-h)))) + ((l/2/m) * np.sum(np.square(theta[1:])))
+
+
+
+print("Homework2 - part 2")
+print("Extracting data from datasource")
 
 with open('ex2data2.txt') as f1:
-    dataset1 = np.loadtxt(f1, delimiter = ',',
-        dtype = 'float', usecols = None)
-    
-test1 = dataset1[:, :-2]
-test2 = dataset1[:, 1:-1]
-result = dataset1[:, 2]
+    dataset1 = np.loadtxt(f1, delimiter=',',
+                          dtype='float', usecols=None)
 
-KO = np.where(result == 0)[0]
-OK = np.where(result)[0]
 
-print("Executing mapFeature function...")
-mf = mapFeature(test1,test2,6)
+X = dataset1[:, :-1]
+Y = dataset1[:, 2]
+KO = np.where(Y == 0)[0]
+OK = np.where(Y)[0]
 
-print("Generating the graph...")
 plt.figure()
+RejectedX = []
+RejectedY = []
+AcceptedX = []
+AcceptedY = []
+for i in KO:
+    RejectedX.append(X[i][0])
+    RejectedY.append(X[i][1])
+for i in OK:
+    AcceptedX.append(X[i][0])
+    AcceptedY.append(X[i][1])
 
-y1 = ""
-y0= ""
-
-for i in range(len(test1)):
-    if i in KO:
-        y0 = plt.scatter(test1[i],test2[i], c="yellow", label="<= 0", edgecolor='black')
-    else:
-        y1 = plt.scatter(test1[i],test2[i], c="black", label="y = 1", marker="+")
-
-plt.xlabel('Microchip Test 1')
-plt.ylabel('Microchip Test 2')
-plt.legend((y1, y0),('y = 1','y = 0'),scatterpoints=1,loc='upper right')
+print("Creating the graph")
+plt.plot(RejectedX, RejectedY, 'yo', label="y = 0")
+plt.plot(AcceptedX, AcceptedY, 'kx', label="y = 1")
+plt.xlabel("Test 1 Score")
+plt.ylabel("Test 2 Score")
+plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 plt.show()
 
-thetas = [0] * len(mp[0])
+mf = []
 
+for i in X:
+    mf.append(mapFeature(i[0], i[1]))
 
-print("Testing costFunction... Returned value is:" , costFunction(thetas, mf, result))
-print("Optimizing theta with optimize.minimize function...")
-thetaOpt = optimize.minimize(costFunction,thetas,args=(mf, result)).x
-print("Result : " , thetaOpt)
+thetas = [0.01] * 28
+
+print("Optimizing the costFunction function...")
+thetasOpt = optimize.minimize(costFunction, thetas, args=(mf, Y, 1))
+
+print("Result is :" , thetasOpt.x)
+tmp = np.linspace(-1, 1.5, 75)
+tmp2 = np.linspace(-1, 1.5, 75)
+tmp3 = np.zeros(shape=(len(tmp), len(tmp2)))
+for i in range(len(tmp)):
+    for j in range(len(tmp2)):
+        tmp3[i, j] =  np.array((mapFeature(np.array(tmp[i]), np.array(tmp2[j])))).dot(np.array(thetasOpt.x))
+
+tmp3 = tmp3.T
+print("Creating the second graph")
+plt.plot(RejectedX, RejectedY, 'yo', label="y = 0")
+plt.plot(AcceptedX, AcceptedY, 'kx', label="y = 1")
+plt.xlabel("Test 1 Score")
+plt.ylabel("Test 2 Score")
+plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+contour = plt.contour(tmp,tmp2,tmp3,0)
+plt.show()

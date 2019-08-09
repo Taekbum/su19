@@ -78,6 +78,6 @@ plt.ylabel('Exam 2 score')
 
 for j in range(len(newX)):
     plt.scatter(newX[j][1], (theta[0] + theta[1] * newX[j][1])/(-theta[2]),c="blue")
-    
+
 plt.legend((admitted, notAdmitted),('Admitted','Not admitted'),scatterpoints=1,loc='upper right')
 plt.show()
